@@ -93,17 +93,19 @@ On mounting, the core React component in [App.jsx](file:///Users/hemanshu/Deskto
 
 ```javascript
 useEffect(() => {
-  fetch("https://localhost:3000/validate", {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://localhost:3000";
+
+  fetch(`${backendUrl}/validate`, {
     credentials: "include", // Crucial: Ensures cookies are sent in cross-site requests
   })
     .then((res) => {
       if (res.status === 401) {
-        window.location.href = "https://localhost:3000/auth";
+        window.location.href = `${backendUrl}/auth`;
       }
     })
     .catch((err) => {
       console.log("Server Error:", err);
-      window.location.href = "https://localhost:3000/auth";
+      window.location.href = `${backendUrl}/auth`;
     });
 }, []);
 ```
@@ -375,3 +377,41 @@ server: {
 ```
 
 This ensures the browser sees both `https://localhost:5173` and `https://localhost:3000` as secure local contexts, permitting cookies to be passed seamlessly.
+
+---
+
+## 5. Production-Ready Configurations (`.env`)
+
+To follow standard secure development practices, all sensitive credentials, URLs, and server parameters have been extracted from [app.js](file:///Users/hemanshu/Desktop/Hemanshu/coding/webdev/intern/Vakrangee/JioPayment/backend/app.js) and moved into a centralized [.env](file:///Users/hemanshu/Desktop/Hemanshu/coding/webdev/intern/Vakrangee/JioPayment/backend/.env) file.
+
+### Environment Schema Example:
+```env
+# Server Configuration
+PORT=3000
+SESSION_SECRET=v-sanchar-secret
+
+# SSL Certificates (relative to backend folder or absolute paths)
+SSL_KEY_FILE=server.pem
+SSL_CERT_FILE=server.crt
+
+# Frontend / CORS Configuration
+FRONTEND_URL=https://localhost:5173
+FRONTEND_REDIRECT_URL=https://localhost:5173/jpb/
+
+# OAuth / ADFS Configuration
+OAUTH_CLIENT_ID=reactsso-dev
+OAUTH_CLIENT_SECRET=v-sanchar-secret
+OAUTH_AUTHORIZE_URL=https://authsit.vakrangee.in/oauth/authorize
+OAUTH_TOKEN_URL=https://authsit.vakrangee.in/oauth/token
+OAUTH_CALLBACK_URL=https://localhost:3000/auth/callback
+OAUTH_SCOPE=read
+
+# SSO Central Logout URL
+SSO_LOGOUT_URL=https://vkmssit.vakrangee.in/Logout
+```
+
+### Highlights of the Integration:
+1. **Dynamic Authorization Header Computation**: Instead of maintaining hardcoded base64 keys, the system now calculates `Basic ` headers on startup dynamically using `Buffer.from(clientID + ':' + clientSecret).toString('base64')`.
+2. **Easy Port & URL Swapping**: Switching ports or endpoints for staging, development, or production can now be done instantly without altering any source code.
+3. **Enhanced Security**: Prevents sensitive credentials and secret keys from being committed into repository logs.
+
