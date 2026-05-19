@@ -65,9 +65,10 @@ app.use(passport.session());
 // --------------------------------------------------
 const clientID = process.env.OAUTH_CLIENT_ID || 'reactsso-dev';
 const clientSecret = process.env.OAUTH_CLIENT_SECRET || 'v-sanchar-secret';
+// Dynamically compute the basicAuthHeader from current clientID and clientSecret to prevent credential mismatches
 const basicAuthHeader = 'Basic ' + Buffer.from(clientID + ':' + clientSecret).toString('base64');
 
-passport.use(new OAuth2Strategy({
+const ssoStrategy = new OAuth2Strategy({
     authorizationURL: process.env.OAUTH_AUTHORIZE_URL || 'https://authsit.vakrangee.in/oauth/authorize',
     tokenURL: process.env.OAUTH_TOKEN_URL || 'https://authsit.vakrangee.in/oauth/token',
     clientID: clientID,
@@ -87,32 +88,56 @@ passport.use(new OAuth2Strategy({
       profile
     });
   }
-));
+);
 
 
 // --------------------------------------------------
 // CUSTOM TOKEN CALL
 // --------------------------------------------------
-OAuth2Strategy.prototype.getOAuthAccessToken = function (code, params, callback) {
-  const url = this._getAccessTokenUrl(code);
+// In passport-oauth2, the strategy delegates token exchange to the internal node-oauth _oauth2 instance.
+// Overriding OAuth2Strategy.prototype.getOAuthAccessToken has no effect because strategy calls _oauth2.getOAuthAccessToken.
+// We intercept getOAuthAccessToken on the ssoStrategy._oauth2 instance to route it via Axios, which resolves TLS connection issues.
+ssoStrategy._oauth2.getOAuthAccessToken = function (code, params, callback) {
+  const url = this._getAccessTokenUrl();
 
-  axios.post(url, params, {
+  const postData = {
+    ...params,
+    client_id: this._clientId,
+    client_secret: this._clientSecret
+  };
+  const codeParam = (postData.grant_type === 'refresh_token') ? 'refresh_token' : 'code';
+  postData[codeParam] = code;
+
+  const querystring = require('querystring');
+  const serializedData = querystring.stringify(postData);
+
+  console.log('Custom Token Call initiated to url:', url);
+
+  const https = require('https');
+
+  axios.post(url, serializedData, {
     headers: {
       authorization: basicAuthHeader,
       'content-type': 'application/x-www-form-urlencoded'
-    }
+    },
+    httpsAgent: new https.Agent({ rejectUnauthorized: false })
   })
     .then((response) => {
+      console.log('Custom Token Call Succeeded!');
       callback(
         null,
         response.data.access_token,
-        response.data.refresh_token
+        response.data.refresh_token,
+        response.data
       );
     })
     .catch((error) => {
+      console.error('Custom Token Call Failed:', error.response ? error.response.data : error.message);
       callback(error);
     });
 };
+
+passport.use(ssoStrategy);
 
 
 // --------------------------------------------------
@@ -155,6 +180,10 @@ app.get('/auth/callback', (req, res, next) => {
     { failureRedirect: '/' },
     (err, user) => {
       if (err) {
+        console.error('OAuth Callback Error:', err);
+        if (err.oauthError) {
+          console.error('OAuth Callback Inner Error:', err.oauthError);
+        }
         return next(err);
       }
 
