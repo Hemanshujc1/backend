@@ -202,7 +202,7 @@ app.get('/auth/callback', (req, res, next) => {
 // --------------------------------------------------
 // VALIDATE USER FOR REACT
 // --------------------------------------------------
-app.get('/validate', (req, res) => {
+app.get('/auth/validate', (req, res) => {
   if (req.isAuthenticated()) {
     return res.json({ valid: true });
   } else {
@@ -214,7 +214,7 @@ app.get('/validate', (req, res) => {
 // --------------------------------------------------
 // PROFILE DATA
 // --------------------------------------------------
-app.get('/profile', (req, res) => {
+app.get('/auth/profile', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).send('Unauthorized');
   }
@@ -236,7 +236,7 @@ app.get('/profile', (req, res) => {
 // --------------------------------------------------
 // LOGOUT
 // --------------------------------------------------
-app.get('/logout', (req, res) => {
+app.get('/auth/logout', (req, res) => {
   req.logout(function (err) {
     if (err) {
       return res.status(500).send("Logout Error");
