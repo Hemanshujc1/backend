@@ -32,7 +32,7 @@ app.set('trust proxy', 1);
 // CORS FOR REACT
 // --------------------------------------------------
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://localhost:5173',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
@@ -69,11 +69,11 @@ const clientSecret = process.env.OAUTH_CLIENT_SECRET || 'v-sanchar-secret';
 const basicAuthHeader = 'Basic ' + Buffer.from(clientID + ':' + clientSecret).toString('base64');
 
 const ssoStrategy = new OAuth2Strategy({
-    authorizationURL: process.env.OAUTH_AUTHORIZE_URL || 'https://authsit.vakrangee.in/oauth/authorize',
-    tokenURL: process.env.OAUTH_TOKEN_URL || 'https://authsit.vakrangee.in/oauth/token',
+    authorizationURL: process.env.OAUTH_AUTHORIZE_URL,
+    tokenURL: process.env.OAUTH_TOKEN_URL,
     clientID: clientID,
     clientSecret: clientSecret,
-    callbackURL: process.env.OAUTH_CALLBACK_URL || 'https://localhost:3000/auth/callback',
+    callbackURL: process.env.OAUTH_CALLBACK_URL,
     scope: process.env.OAUTH_SCOPE || 'read',
     customHeaders: {
       authorization: basicAuthHeader,
@@ -191,7 +191,7 @@ app.get('/auth/callback', (req, res, next) => {
         if (err) return next(err);
 
         req.session.save(() => {
-          return res.redirect(process.env.FRONTEND_REDIRECT_URL || 'https://localhost:5173/jpb/');
+          return res.redirect(process.env.FRONTEND_REDIRECT_URL);
         });
       });
     }
