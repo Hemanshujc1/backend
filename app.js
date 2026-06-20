@@ -184,7 +184,7 @@ app.get(
   (req, res, next) => {
     if (req.query.returnTo) {
       console.log("Backend /auth - Setting returnTo cookie:", req.query.returnTo);
-      res.cookie('returnTo', encodeURIComponent(req.query.returnTo), {
+      res.cookie('returnTo', req.query.returnTo, {
         maxAge: 5 * 60 * 1000, // 5 minutes
         httpOnly: true,
         secure: true,
