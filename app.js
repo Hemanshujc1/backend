@@ -183,19 +183,15 @@ app.get(
   "/auth",
   (req, res, next) => {
     if (req.query.returnTo) {
-      console.log("Backend /auth - Session ID:", req.sessionID);
-      console.log("Backend /auth - Received returnTo query param:", req.query.returnTo);
-      req.session.returnTo = req.query.returnTo;
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return next(err);
-        }
-        next();
+      console.log("Backend /auth - Setting returnTo cookie:", req.query.returnTo);
+      res.cookie('returnTo', encodeURIComponent(req.query.returnTo), {
+        maxAge: 5 * 60 * 1000, // 5 minutes
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none'
       });
-    } else {
-      next();
     }
+    next();
   },
   passport.authenticate("oauth2"),
 );
@@ -223,13 +219,24 @@ app.get("/auth/callback", (req, res, next) => {
       // });
 
       req.session.save(() => {
-        const returnToUrl =
-          req.session.returnTo || process.env.FRONTEND_REDIRECT_URL;
-        console.log("Backend /auth/callback - Session ID:", req.sessionID);
-        console.log("Backend /auth/callback - Incoming cookies:", req.headers.cookie);
-        console.log("Backend /auth/callback - Session returnTo is:", req.session.returnTo);
-        console.log("Backend /auth/callback - Redirecting to:", returnToUrl);
-        delete req.session.returnTo; // Clean up after use
+        // Read the returnTo URL from the cookie we set earlier
+        let returnToUrl = process.env.FRONTEND_REDIRECT_URL;
+        if (req.headers.cookie) {
+          const match = req.headers.cookie.match(/returnTo=([^;]+)/);
+          if (match) {
+            returnToUrl = decodeURIComponent(match[1]);
+          }
+        }
+        
+        console.log("Backend /auth/callback - Parsed returnTo from cookie:", returnToUrl);
+        
+        // Clear the cookie now that we've read it
+        res.clearCookie('returnTo', {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        });
+        
         return res.redirect(returnToUrl);
       });
     });
