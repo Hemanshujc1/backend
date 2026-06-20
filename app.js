@@ -184,8 +184,16 @@ app.get(
   (req, res, next) => {
     if (req.query.returnTo) {
       req.session.returnTo = req.query.returnTo;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return next(err);
+        }
+        next();
+      });
+    } else {
+      next();
     }
-    next();
   },
   passport.authenticate("oauth2"),
 );
