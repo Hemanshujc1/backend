@@ -183,6 +183,7 @@ app.get(
   "/auth",
   (req, res, next) => {
     if (req.query.returnTo) {
+      console.log("Backend /auth - Received returnTo query param:", req.query.returnTo);
       req.session.returnTo = req.query.returnTo;
       req.session.save((err) => {
         if (err) {
@@ -223,6 +224,8 @@ app.get("/auth/callback", (req, res, next) => {
       req.session.save(() => {
         const returnToUrl =
           req.session.returnTo || process.env.FRONTEND_REDIRECT_URL;
+        console.log("Backend /auth/callback - Session returnTo is:", req.session.returnTo);
+        console.log("Backend /auth/callback - Redirecting to:", returnToUrl);
         delete req.session.returnTo; // Clean up after use
         return res.redirect(returnToUrl);
       });
