@@ -183,12 +183,15 @@ app.get(
   "/auth",
   (req, res, next) => {
     if (req.query.returnTo) {
-      console.log("Backend /auth - Setting returnTo cookie:", req.query.returnTo);
-      res.cookie('returnTo', req.query.returnTo, {
-        maxAge: 5 * 60 * 1000, // 5 minutes
+      console.log(
+        "Backend /auth - Setting returnTo cookie:",
+        req.query.returnTo,
+      );
+      res.cookie("returnTo", req.query.returnTo, {
+        maxAge: 1 * 60 * 1000, // 1 minutes
         httpOnly: true,
         secure: true,
-        sameSite: 'none'
+        sameSite: "none",
       });
     }
     next();
@@ -227,16 +230,19 @@ app.get("/auth/callback", (req, res, next) => {
             returnToUrl = decodeURIComponent(match[1]);
           }
         }
-        
-        console.log("Backend /auth/callback - Parsed returnTo from cookie:", returnToUrl);
-        
+
+        console.log(
+          "Backend /auth/callback - Parsed returnTo from cookie:",
+          returnToUrl,
+        );
+
         // Clear the cookie now that we've read it
-        res.clearCookie('returnTo', {
+        res.clearCookie("returnTo", {
           httpOnly: true,
           secure: true,
-          sameSite: 'none'
+          sameSite: "none",
         });
-        
+
         return res.redirect(returnToUrl);
       });
     });
