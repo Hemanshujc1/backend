@@ -188,7 +188,7 @@ app.get(
         req.query.returnTo,
       );
       res.cookie("returnTo", req.query.returnTo, {
-        maxAge: 1 * 60 * 1000, // 1 minutes
+        maxAge: 1 * 60 * 1000, // 1 minute (time to save the redirect url in the browser url)
         httpOnly: true,
         secure: true,
         sameSite: "none",
